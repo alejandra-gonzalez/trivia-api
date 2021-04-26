@@ -98,15 +98,23 @@ def create_app(test_config=None):
   Try using the word "title" to start. 
   '''
 
-  '''
-  @TODO: 
-  Create a GET endpoint to get questions based on category. 
+  # This endpoint gets questions of a specific category. 
+  @app.route('/categories/<int:category_id>/questions')
+  def retrieve_questions_by_category(category_id):
+    category = Category.query.filter_by(id=category_id).one_or_none()
 
-  TEST: In the "List" tab / main screen, clicking on one of the 
-  categories in the left column will cause only questions of that 
-  category to be shown. 
-  '''
+    if (category is None):
+      abort(404)
+    
+    selection = Question.query.filter_by(category=category_id).all()
+    paginated_selection = paginate_questions(request, selection)
 
+    return jsonify({
+      'success': True,
+      'questions': paginated_selection,
+      'total_questions': len(Question.query.all()),
+      'current_category': category.type
+    })
 
   '''
   @TODO: 
