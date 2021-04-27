@@ -125,17 +125,34 @@ def create_app(test_config=None):
       abort(422)
 
     return app
-  '''
-  @TODO: 
-  Create a POST endpoint to get questions based on a search term. 
-  It should return any questions for whom the search term 
-  is a substring of the question. 
 
-  TEST: Search by any phrase. The questions list will update to include 
-  only question that include that string within their question. 
-  Try using the word "title" to start. 
-  '''
 
+  # This endpoint gets questions based on a search term. It returns any 
+  # questions for whom the search term is a substring of the question.
+  @app.route('/questions/search', methods=['POST'])
+  def search_questions():
+    body = request.get_json()
+    print(body)
+
+    if (body.get('searchTerm')):
+      search_term = body.get('searchTerm', None)
+      selection = Question.query.filter(
+        Question.question.ilike(f'%{search_term}%')).all()
+      
+      if (len(selection) == 0):
+        abort(404)
+
+      paginated_selection = paginate_questions(request, selection)
+
+      return jsonify({
+        'success': True,
+        'questions': paginated_selection,
+        'total_questions': len(selection),
+        'current_category': None
+      })
+    else:
+      abort(400)
+      
   # This endpoint gets questions of a specific category. 
   @app.route('/categories/<int:category_id>/questions')
   def retrieve_questions_by_category(category_id):
@@ -166,11 +183,30 @@ def create_app(test_config=None):
   and shown whether they were correct or not. 
   '''
 
-  '''
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  '''
+  # Error handlers for all expected errors including 404 and 422. 
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify({
+      "success": False,
+      "error": 404,
+      "message": "Resource not found"
+    }), 404
+  
+  @app.errorhandler(422)
+  def unprocessable(error):
+    return jsonify({
+      "success": False,
+      "error": 422,
+      "message": "unprocessable"
+    }), 422
+
+  @app.errorhandler(405)
+  def not_allowed(error):
+    return jsonify({
+      "success": False,
+      "error": 405,
+      "message": "method not allowed"
+    }), 405
 
   return app
 
